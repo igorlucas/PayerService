@@ -24,4 +24,4 @@ RUN useradd -m payer-service-user
 USER payer-service-user
 
 #ENTRYPOINT ["dotnet", "API.dll"]
-CMD ASPNETCORE_URLS=http://*:$PORT dotnet API.dll
+CMD ASPNETCORE_URLS=http://*:$PORT/swagger dotnet API.dll
