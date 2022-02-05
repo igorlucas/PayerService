@@ -1,32 +1,57 @@
+using API.Data;
+using API.Entities;
+using API.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+var services = builder.Services;
+var configuration = builder.Configuration;
 
-// Add services to the container.
-builder.Services.AddControllers();
 
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+ExecuteServicesConfiguration(services, configuration);
+ExecuteHttpRequestPipelineConfiguration(builder);
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+static void ExecuteServicesConfiguration(IServiceCollection services, ConfigurationManager configuration)
 {
-    //app.UseSwagger();
-    //app.UseSwaggerUI();
+    // Add services to the container.
+    var connectionString = configuration.GetConnectionString("Development");
+
+    services.AddDbContext<global::API.Data.DataContext>((DbContextOptionsBuilder options) => options.UseSqlite(connectionString));
+
+    services.AddControllers();
+
+    // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    services.AddEndpointsApiExplorer();
+    services.AddSwaggerGen();
+
+    services.AddTransient<IRepository<Customer>, Repository<Customer>>();
+    services.AddTransient<IRepository<Address>, Repository<Address>>();
+    services.AddTransient<ICustomerService, CustomerService>();
+    services.AddTransient<IAddressService, AddressService>();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+static void ExecuteHttpRequestPipelineConfiguration(WebApplicationBuilder builder)
+{
+    // Configure the HTTP request pipeline.
+    var app = builder.Build();
 
-app.UseHttpsRedirection();
-app.UseRouting();
+    if (app.Environment.IsDevelopment())
+    {
+        //app.UseSwagger();
+        //app.UseSwaggerUI();
+    }
 
-app.UseAuthorization();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 
-app.MapControllers();
+    app.UseHttpsRedirection();
+    app.UseRouting();
 
-//app.MapGet("/", () => "PayerService is runing...");
-app.Run(async context => context.Response.Redirect("/swagger"));
+    app.UseAuthorization();
 
-app.Run();
+    app.MapControllers();
+
+    app.MapGet("/", (context) => Task.Run(() => context.Response.Redirect("/swagger")));
+
+    app.Run();
+}
