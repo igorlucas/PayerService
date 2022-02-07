@@ -17,7 +17,7 @@ namespace API.Controllers
 
         // GET: api/Customers
         [HttpGet]
-        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers() => await _customerService.ReadAllAsync();
+        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers() => Ok(await _customerService.ReadAllAsync());
 
         // GET: api/Customers/5
         [HttpGet("{id}")]
@@ -54,7 +54,7 @@ namespace API.Controllers
         public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
         {
             await _customerService.CreateAsync(customer);
-            return CreatedAtAction("GetCustomer", new { id = customer.Id }, customer);
+            return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
         }
 
         // DELETE: api/Customers/5

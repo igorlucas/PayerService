@@ -17,7 +17,7 @@ namespace API.Controllers
 
         // GET: api/Addresses
         [HttpGet]
-        public async Task<ActionResult<GenericApiResponseEntityList<Address>>> GetAddresses() => await _addressService.ReadAllAsync();
+        public async Task<ActionResult<GenericApiResponseEntityList<Address>>> GetAddresses() => Ok(await _addressService.ReadAllAsync());
 
         // GET: api/Addresses/5
         [HttpGet("{id}")]

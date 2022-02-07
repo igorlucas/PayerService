@@ -37,5 +37,18 @@ namespace API.Entities
         [Required]
         [StringLength(8)]
         public string PostalCode { get; set; }
+
+        public Address() { }
+        public Address(string street, string number, string complement, string district, string city, string state, string country, string postalCode)
+        {
+            Street = street;
+            Number = number;
+            Complement = complement;
+            District = district;
+            City = city;
+            State = state;
+            Country = country;
+            PostalCode = postalCode;
+        }
     }
 }
