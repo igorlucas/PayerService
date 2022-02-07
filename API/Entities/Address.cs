@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Entities
 {
@@ -37,7 +37,7 @@ namespace API.Entities
         [Required]
         [StringLength(8)]
         public string PostalCode { get; set; }
-
+      
         public Address() { }
         public Address(string street, string number, string complement, string district, string city, string state, string country, string postalCode)
         {
