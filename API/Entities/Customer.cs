@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace API.Entities
 {
@@ -32,5 +32,18 @@ namespace API.Entities
 
         [Required]
         public Address Address { get; set; }
+
+        public Customer() { }
+        public Customer(string fullName, string documentType, string documentValue, DateTime? birthDate, string? phone, string? cellPhone, string? email, Address address)
+        {
+            FullName = fullName;
+            DocumentType = documentType;
+            DocumentValue = documentValue;
+            BirthDate = birthDate;
+            Phone = phone;
+            CellPhone = cellPhone;
+            Email = email;
+            Address = address;
+        }
     }
 }

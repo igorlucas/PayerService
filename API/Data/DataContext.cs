@@ -1,4 +1,4 @@
-﻿using API.Entities;
+using API.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Data
@@ -7,9 +7,10 @@ namespace API.Data
     {
         public DbSet<Customer> Customers { get; set; }
         public DbSet<Address> Addresses { get; set; }
-        public DataContext(DbContextOptions<DataContext> options) : base(options)
+
+        public DataContext(DbContextOptions<DataContext> options, bool migrate = true) : base(options)
         {
-            Database.Migrate();
+            if (migrate) Database.Migrate();
         }
     }
 }
