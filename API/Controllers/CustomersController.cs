@@ -1,9 +1,10 @@
 ﻿#nullable disable
-using API.Entities;
 using API.Models;
-using API.Services;
+using GetnetProvider.Models;
+using GetnetProvider.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using System.Net;
 
 namespace API.Controllers
 {
@@ -11,62 +12,64 @@ namespace API.Controllers
     [ApiController]
     public class CustomersController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly CustomerService _customerService;
+        private readonly GetnetSettings _getnetSettings;
 
-        public CustomersController(ICustomerService customerService) => _customerService = customerService;
+        public CustomersController(CustomerService customerService, IOptions<GetnetSettings> settingsOptions)
+        {
+            _customerService = customerService;
+            _getnetSettings = settingsOptions.Value;
+        }
 
         // GET: api/Customers
         [HttpGet]
-        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers() => Ok(await _customerService.ReadAllAsync());
+        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers(string query)
+        {
+            var listCustomerResponse = await _customerService.ListAsync(query);
+            var apiResponse = new GenericApiResponseEntityList<Customer>(listCustomerResponse.StatusCode, listCustomerResponse.Message, listCustomerResponse.Result?.Customers);
+
+            if (apiResponse.StatusCode == (int)HttpStatusCode.BadRequest)
+                return BadRequest(apiResponse.Message);
+
+            if (apiResponse.StatusCode == (int)HttpStatusCode.Unauthorized)
+                return Unauthorized(apiResponse.Message);
+
+
+            return Ok(apiResponse.Message);
+        }
 
         // GET: api/Customers/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<GenericApiResponseEntity<Customer>>> GetCustomer(Guid id)
+        public async Task<ActionResult<GenericApiResponseEntity<Customer>>> GetCustomer(string id)
         {
-            var response = await _customerService.ReadByIdAsync(id);
-            if (response == null) return NotFound();
-            else return Ok(response);
+            var serviceResponse = await _customerService.ReadAsync(id);
+            var apiResponse = new GenericApiResponseEntity<ReadCustomerResponse>(serviceResponse.StatusCode, serviceResponse.Message, serviceResponse.Result);
+            if (apiResponse.StatusCode == (int)HttpStatusCode.NotFound) return NotFound(apiResponse.Message);
+            else if (apiResponse.StatusCode == (int)HttpStatusCode.Unauthorized) return Unauthorized(apiResponse.Message);
+            else return Ok(apiResponse.Message);
         }
 
-        // PUT: api/Customers/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutCustomer(Guid id, Customer customer)
-        {
-            if (id != customer.Id) return BadRequest();
-
-            try
-            {
-                await _customerService.UpdateAsync(customer);
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_customerService.CustomerExists(id)) return NotFound();
-                else throw;
-            }
-
-            return NoContent();
-        }
 
         // POST: api/Customers
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Customer>> PostCustomer(Customer customer)
+        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> PostCustomer(Customer customer)
         {
-            await _customerService.CreateAsync(customer);
-            return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
-        }
+            var createCustomerRequest = new CreateCustomerRequest(_getnetSettings.SellerId, customer);
+            var createCustomerResponse = await _customerService.CreateAsync(createCustomerRequest);
+            var apiResponse = new GenericApiResponseEntity<CreateCustomerResponse>(createCustomerResponse.StatusCode, createCustomerResponse.Message, createCustomerResponse.Result);
 
-        // DELETE: api/Customers/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCustomer(Guid id)
-        {
-            var customer = (await _customerService.ReadByIdAsync(id)).Resource;
-            if (customer == null) return NotFound();
-
-            await _customerService.DeleteAsync(customer);
-
-            return NoContent();
+            switch (createCustomerResponse.StatusCode)
+            {
+                case (int)HttpStatusCode.OK:
+                    return CreatedAtAction(nameof(GetCustomer), new { id = customer.Id }, customer);
+                case (int)HttpStatusCode.Unauthorized:
+                    return Unauthorized(apiResponse.Message);
+                case (int)HttpStatusCode.BadRequest:
+                    return new BadRequestObjectResult(apiResponse.Message);
+                default:
+                    return new StatusCodeResult(createCustomerResponse.StatusCode);
+            }
         }
     }
 }

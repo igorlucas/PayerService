@@ -1,6 +1,4 @@
-using API.Data;
-using API.Entities;
-using API.Services;
+using GetnetProvider.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,10 +22,8 @@ static void ExecuteServicesConfiguration(IServiceCollection services, Configurat
     services.AddEndpointsApiExplorer();
     services.AddSwaggerGen();
 
-    services.AddTransient<IRepository<Customer>, Repository<Customer>>();
-    services.AddTransient<IRepository<Address>, Repository<Address>>();
-    services.AddTransient<ICustomerService, CustomerService>();
-    services.AddTransient<IAddressService, AddressService>();
+    services.AddTransient<AuthenticationService>();
+    services.AddTransient<CustomerService>();
 }
 
 static void ExecuteHttpRequestPipelineConfiguration(WebApplicationBuilder builder)
