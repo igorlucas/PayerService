@@ -1,44 +1,44 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
-namespace API.Entities
+namespace GetnetProvider.Models
 {
     public class Address
     {
-        [Required]
-        public Guid Id { get; set; }
-
-        [Required]
         [StringLength(60)]
+        [JsonPropertyName("street")]
         public string Street { get; set; }
 
-        [Required]
         [StringLength(10)]
+        [JsonPropertyName("number")]
         public string Number { get; set; }
 
         [StringLength(60)]
+        [JsonPropertyName("complement")]
         public string Complement { get; set; }
 
-        [Required]
         [StringLength(40)]
+        [JsonPropertyName("district")]
         public string District { get; set; }
 
-        [Required]
         [StringLength(40)]
+        [JsonPropertyName("city")]
         public string City { get; set; }
 
-        [Required]
         [StringLength(20)]
+        [JsonPropertyName("state")]
         public string State { get; set; }
 
-        [Required]
         [StringLength(20)]
+        [JsonPropertyName("country")]
         public string Country { get; set; }
 
-        [Required]
         [StringLength(8)]
+        [JsonPropertyName("postal_code")]
         public string PostalCode { get; set; }
-      
+
         public Address() { }
+
         public Address(string street, string number, string complement, string district, string city, string state, string country, string postalCode)
         {
             Street = street;
