@@ -23,11 +23,6 @@ namespace API.Controllers
 
         // GET: api/Customers
         [HttpGet]
-        public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers() => Ok(await _customerService.ReadAllAsync());
-
-        // GET: api/Customers/5
-        [HttpGet("{id}")]
-        public async Task<ActionResult<GenericApiResponseEntity<Customer>>> GetCustomer(Guid id)
         public async Task<ActionResult<GenericApiResponseEntityList<Customer>>> GetCustomers(string query)
         {
             var listCustomerResponse = await _customerService.ListAsync(query);
