@@ -1,4 +1,6 @@
+using API.Models.CommandRequests;
 using GetnetProvider.Models;
+using GetnetProvider.Models.Enums;
 using GetnetProvider.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,9 +30,14 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"],
             });
 
-            _authenticationService = new AuthenticationService(_getnetSettingsOptions);
+            var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
+
+            var factory = serviceProvider.GetService<ILoggerFactory>();
+
+            _authenticationService = new AuthenticationService(_getnetSettingsOptions, factory.CreateLogger<AuthenticationService>());
         }
 
+        #region GetAccessToken
         [Fact]
         public async Task GetAccessToken_WhenCredentialsAreValid_ShouldReturnAToken()
         {
@@ -55,7 +62,11 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"],
             });
 
-            var authenticationService = new AuthenticationService(getnetSettingsOptions);
+            var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
+
+            var factory = serviceProvider.GetService<ILoggerFactory>();
+
+            var authenticationService = new AuthenticationService(getnetSettingsOptions, factory.CreateLogger<AuthenticationService>());
 
             //// Act        
             var response = await authenticationService.GetAccessToken();
@@ -76,13 +87,32 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"],
             });
 
-            var authenticationService = new AuthenticationService(getnetSettingsOptions);
+
+            var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
+
+            var factory = serviceProvider.GetService<ILoggerFactory>();
+
+            var authenticationService = new AuthenticationService(getnetSettingsOptions, factory.CreateLogger<AuthenticationService>());
 
             //// Act        
             var response = await authenticationService.GetAccessToken();
 
             //// Assert
             Assert.NotNull(response.ErrorResponse);
+        }
+        #endregion GetAccessToken
+
+        [Fact]
+        public async Task TokenizationCard_WhenRequestBodyIsValid_ShouldReturnAToken()
+        {
+            //// Arrange
+            var createCardTokenRequest = new CreateCardTokenRequest("5155901222280001", "customer_21081826");
+            //// Act        
+            var createCardTokenResponse = await _authenticationService.TokenizationCard(createCardTokenRequest);
+
+            //// Assert
+            Assert.Null(createCardTokenResponse.Error);
+            Assert.NotNull(createCardTokenResponse.Result);
         }
     }
 
@@ -91,7 +121,6 @@ namespace @Getnet
         private readonly IConfigurationRoot _configuration;
         private readonly IOptions<GetnetSettings> _settingsOptions;
         private readonly AuthenticationService _authenticationService;
-        private readonly ILogger<CustomerService> _logger;
         private readonly CustomerService _customerService;
 
         public CustomerServiceUnitTests()
@@ -106,15 +135,13 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"]
             });
 
-            _authenticationService = new AuthenticationService(_settingsOptions);
-
             var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
 
             var factory = serviceProvider.GetService<ILoggerFactory>();
 
-            _logger = factory.CreateLogger<CustomerService>();
+            _authenticationService = new AuthenticationService(_settingsOptions, factory.CreateLogger<AuthenticationService>());
 
-            _customerService = new CustomerService(_settingsOptions, _authenticationService, _logger);
+            _customerService = new CustomerService(_settingsOptions, _authenticationService, factory.CreateLogger<CustomerService>());
         }
 
         #region CreateCustomer
@@ -227,15 +254,14 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"],
             });
 
-            var authenticationService = new AuthenticationService(settingsOptions);
 
             var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
 
             var factory = serviceProvider.GetService<ILoggerFactory>();
 
-            var logger = factory.CreateLogger<CustomerService>();
+            var authenticationService = new AuthenticationService(settingsOptions, factory.CreateLogger<AuthenticationService>());
 
-            var customerService = new CustomerService(settingsOptions, authenticationService, logger);
+            var customerService = new CustomerService(settingsOptions, authenticationService, factory.CreateLogger<CustomerService>());
 
             int page = 1, limit = 10;
 
@@ -280,15 +306,13 @@ namespace @Getnet
                 ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"],
             });
 
-            var authenticationService = new AuthenticationService(settingsOptions);
-
             var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
 
             var factory = serviceProvider.GetService<ILoggerFactory>();
 
-            var logger = factory.CreateLogger<CustomerService>();
+            var authenticationService = new AuthenticationService(settingsOptions, factory.CreateLogger<AuthenticationService>());
 
-            var customerService = new CustomerService(settingsOptions, authenticationService, logger);
+            var customerService = new CustomerService(settingsOptions, authenticationService, factory.CreateLogger<CustomerService>());
 
             var customer_id = $"123";
 
@@ -316,5 +340,97 @@ namespace @Getnet
             Assert.Null(readCustomerResponse.Result);
         }
         #endregion ReadCustomerById
+    }
+
+    public class PaymentServiceUnitTests
+    {
+        private readonly IConfigurationRoot _configuration;
+        private readonly IOptions<GetnetSettings> _settingsOptions;
+        private readonly AuthenticationService _authenticationService;
+        private readonly PaymentService _paymentService;
+
+        public PaymentServiceUnitTests()
+        {
+            _configuration = new ConfigurationBuilder().AddJsonFile("appsettings.Development.json").Build();
+
+            _settingsOptions = Options.Create(new GetnetSettings()
+            {
+                SellerId = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["SellerId"],
+                ClientId = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ClientId"],
+                ClientSecret = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ClientSecret"],
+                ApiUrl = _configuration.GetSection("PaymentProviders").GetSection("Getnet")["ApiUrl"]
+            });
+
+            var serviceProvider = new ServiceCollection().AddLogging().BuildServiceProvider();
+
+            var factory = serviceProvider.GetService<ILoggerFactory>();
+
+            _authenticationService = new AuthenticationService(_settingsOptions, factory.CreateLogger<AuthenticationService>());
+
+            _paymentService = new PaymentService(_settingsOptions, _authenticationService, factory.CreateLogger<PaymentService>());
+        }
+
+        [Fact]
+        public async Task PaymentByCredit_WhenRequestBodyIsValid_ShouldReturnAResultBodyWithoutError()
+        {
+
+            /// Arrange
+            var paymentCommandRequest = new PaymentCommandRequest
+            {
+                Amount = 100,
+                CardholderName = "JOAO DA SILVA",
+                CardNumber = "5155901222280001",
+                ExpirationMonth = "12",
+                ExpirationYear = "28",
+                SecurityCode = "123",
+                NumberInstallments = 1,
+                SaveCardData = false,
+                SoftDescriptor = "Service - A",
+                Customer = new Customer
+                {
+                    Id = "customer_21081826",
+                    Name = "João da Silva",
+                    Firstname = "João",
+                    Lastname = "da Silva",
+                    Email = "customer@email.com.br",
+                    DocumentType = "CPF",
+                    DocumentNumber = "05187887897",
+                    Phone = "85999887766",
+                    BillingAddress = new Address("Av. Brasil", "1000", "Sala 1", "São Geraldo", "Porto Alegre", "RS", "Brasil", "90230060")
+                },
+                Order = new PaymentRequestOrder()
+                {
+                    OrderId = "service_123",
+                    ProductType = "service",
+                    SalesTax = 0
+                }
+            };
+
+            var tokenCard = (await _authenticationService.TokenizationCard(new CreateCardTokenRequest(paymentCommandRequest.CardNumber, paymentCommandRequest.Customer.Id)))?.Result?.NumberToken;
+
+            var card = new PaymentRequestCard(tokenCard, paymentCommandRequest.CardholderName, paymentCommandRequest.SecurityCode, null, paymentCommandRequest.ExpirationMonth, paymentCommandRequest.ExpirationYear);
+
+            var creditData = new PaymentRequestCreditData(paymentCommandRequest.SaveCardData, TransactionTypeEnum.FULL.ToString(), paymentCommandRequest.NumberInstallments, paymentCommandRequest.SoftDescriptor, card);
+
+            var ip = (await _authenticationService.GetIPDevice()).IP;
+            var paymentRequest = new CreateCreditPaymentRequest()
+            {
+                Amount = paymentCommandRequest.Amount,
+                Credit = creditData,
+                Currency = "BRL",
+                Customer = paymentCommandRequest.Customer,
+                Order = paymentCommandRequest.Order,
+                SellerId = _settingsOptions.Value.SellerId,
+                Device = new PaymentRequestDevice(ip, _settingsOptions.Value.SellerId),
+            };
+
+            //// Act
+            var paymentResponse = await _paymentService.PaymentByCreditCard(paymentRequest);
+
+            /// Assert
+            Assert.NotNull(paymentResponse);
+            Assert.Null(paymentResponse.Error);
+            Assert.NotNull(paymentResponse.Result);
+        }
     }
 }
