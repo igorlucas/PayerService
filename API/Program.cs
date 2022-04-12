@@ -24,6 +24,7 @@ static void ExecuteServicesConfiguration(IServiceCollection services, Configurat
 
     services.AddTransient<AuthenticationService>();
     services.AddTransient<CustomerService>();
+    services.AddTransient<PaymentService>();
 }
 
 static void ExecuteHttpRequestPipelineConfiguration(WebApplicationBuilder builder)

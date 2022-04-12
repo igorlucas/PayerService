@@ -10,15 +10,21 @@ namespace GetnetProvider.Models
         public string Id { get; set; }
 
         [Required]
+        [JsonPropertyName("name")]
+        [StringLength(100)]
+        public string Name { get; set; }
+
+        [Required]
         [JsonPropertyName("first_name")]
         [StringLength(40)]
         public string Firstname { get; set; }
 
         [Required]
         [JsonPropertyName("last_name")]
+        [StringLength(80)]
         public string Lastname { get; set; }
 
-        [Required]//CPF-CNPJ
+        [Required]
         [JsonPropertyName("document_type")]
         public string DocumentType { get; set; }
 
@@ -39,15 +45,17 @@ namespace GetnetProvider.Models
         [EmailAddress]
         public string? Email { get; set; }
 
-        //[DataType(DataType.Date)]
         [JsonPropertyName("birth_date")]//YYYY-MM-DD
         [StringLength(10, MinimumLength = 10)]
         public string? BirthDate { get; set; }
 
-        [Required]
         [JsonPropertyName("address")]
         public Address? Address { get; set; }
 
+        [Required]
+        [JsonPropertyName("billing_address")]
+        public Address BillingAddress { get; set; }
+            
         public Customer() { }
         public Customer(string firstname, string lastname, string documentType, string documentNumber, string? phone, string? celPhone, string? email, string? birthDate, Address? address)
         {

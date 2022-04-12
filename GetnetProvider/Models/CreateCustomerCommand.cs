@@ -26,7 +26,7 @@ namespace GetnetProvider.Models
 
         [Required]
         [StringLength(10)]
-        [JsonPropertyName("document_type")]//cpf//cnpj
+        [JsonPropertyName("document_type")]
         public string DocumentType { get; set; }
 
         [Required]
